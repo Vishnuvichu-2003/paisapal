@@ -3,65 +3,43 @@ import pandas as pd
 
 st.set_page_config(page_title="PaisaPal", layout="wide")
 
-# ---------- HEADER ----------
-st.title("PaisaPal 💰")
-st.caption("Your business cash companion.")
+# -------------------------
+# SIDEBAR
+# -------------------------
+st.sidebar.title("Navigation")
+
+page = st.sidebar.radio(
+    "Go to",
+    ["Overview", "Insights", "Ask PaisaPal"]
+)
 
 uploaded_file = st.sidebar.file_uploader("Upload Transaction CSV", type="csv")
 
-if uploaded_file is not None:
+st.title("PaisaPal 💰")
+st.caption("Your business cash companion.")
 
-    # ---------- DATA ----------
+# -------------------------
+# LOAD DATA
+# -------------------------
+if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
+
     df["Date"] = pd.to_datetime(df["Date"])
     df = df.sort_values("Date")
-    df["Cash Balance"] = df["Amount"].cumsum()
+    df["Cumulative Cash"] = df["Amount"].cumsum()
 
     total_income = df[df["Amount"] > 0]["Amount"].sum()
     total_expense = df[df["Amount"] < 0]["Amount"].sum()
     net_cashflow = total_income + total_expense
 
-    expense_ratio = abs(total_expense) / total_income if total_income != 0 else 0
+    expense_ratio = 0
+    if total_income != 0:
+        expense_ratio = abs(total_expense) / total_income
 
-    total_days = (df["Date"].max() - df["Date"].min()).days + 1
-    avg_daily_cashflow = net_cashflow / total_days if total_days > 0 else 0
-
-    # ---------- HEALTH SCORE ----------
-    score = 50
-
-    if net_cashflow > 0:
-        score += 20
-    else:
-        score -= 20
-
-    if expense_ratio < 0.5:
-        score += 15
-    elif expense_ratio < 0.8:
-        score += 5
-    else:
-        score -= 15
-
-    if df["Cash Balance"].iloc[-1] > df["Cash Balance"].iloc[0]:
-        score += 10
-    else:
-        score -= 10
-
-    score = max(0, min(100, score))
-
-    if score >= 80:
-        health_label = "Strong"
-    elif score >= 60:
-        health_label = "Stable"
-    elif score >= 40:
-        health_label = "Monitor"
-    else:
-        health_label = "Needs Attention"
-
-    # ---------- TABS ----------
-    tab1, tab2, tab3 = st.tabs(["Overview", "Insights", "Ask PaisaPal"])
-
-    # ================= OVERVIEW =================
-    with tab1:
+    # -------------------------
+    # OVERVIEW TAB
+    # -------------------------
+    if page == "Overview":
 
         st.subheader("Where You Stand")
 
@@ -71,81 +49,112 @@ if uploaded_file is not None:
         col2.metric("Total Outflow", f"₹{abs(total_expense):,.0f}")
         col3.metric("Net Position", f"₹{net_cashflow:,.0f}")
 
-        st.markdown("---")
+        st.divider()
 
         st.subheader("Cash Trend")
-        st.line_chart(df.set_index("Date")["Cash Balance"])
+        st.line_chart(df.set_index("Date")["Cumulative Cash"])
 
-        st.markdown("---")
+        st.divider()
 
-        st.subheader("Business Health")
-        st.metric("Health Score", f"{score}/100")
-        st.write(f"Status: **{health_label}**")
+        # -------------------------
+        # BUSINESS HEALTH SCORE
+        # -------------------------
+        score = 50
 
-    # ================= INSIGHTS =================
-    with tab2:
-
-        st.subheader("What This Means")
-
-        if net_cashflow >= 0:
-            st.write("• Income is currently covering expenses.")
+        # Net cashflow impact
+        if net_cashflow > 0:
+            score += 20
         else:
-            st.write("• Spending is currently higher than inflows.")
+            score -= 20
 
+        # Expense ratio impact
         if expense_ratio < 0.5:
-            st.write("• Expense levels are comfortably aligned with income.")
+            score += 20
         elif expense_ratio < 0.8:
-            st.write("• Expenses are moderate relative to income.")
+            score += 10
         else:
-            st.write("• Expenses are consuming a large share of income.")
+            score -= 10
 
-        if df["Cash Balance"].iloc[-1] > df["Cash Balance"].iloc[0]:
-            st.write("• Cash position is gradually improving.")
+        # Trend impact
+        if df["Cumulative Cash"].iloc[-1] > df["Cumulative Cash"].iloc[0]:
+            score += 10
         else:
-            st.write("• Cash position is trending downward.")
+            score -= 10
 
-        st.markdown("---")
+        score = max(0, min(score, 100))
 
-        st.subheader("Suggested Focus")
+        st.subheader("Business Health Score")
+
+        if score >= 80:
+            st.success(f"🟢 {score}/100 — Strong Business Position")
+        elif score >= 50:
+            st.warning(f"🟡 {score}/100 — Stable but Monitor Closely")
+        else:
+            st.error(f"🔴 {score}/100 — Needs Immediate Attention")
+
+    # -------------------------
+    # INSIGHTS TAB
+    # -------------------------
+    elif page == "Insights":
+
+        st.subheader("Financial Insights")
+
+        if net_cashflow < 0:
+            st.error("⚠ Your business is currently running at a loss.")
+        else:
+            st.success("✅ Your business is cash positive.")
 
         if expense_ratio > 0.8:
-            st.write("Consider reviewing major expense categories to improve margin stability.")
-        elif net_cashflow < 0:
-            st.write("Improving inflow consistency could strengthen overall stability.")
+            st.warning("Expenses are very high compared to income.")
+        elif expense_ratio > 0.5:
+            st.info("Expenses are moderate and should be monitored.")
         else:
-            st.write("Current position is stable. Maintain spending discipline and monitor trends.")
+            st.success("Expense levels are healthy.")
 
-    # ================= ASK PAISAPAL =================
-    with tab3:
+        # Top Expense
+        expense_df = df[df["Amount"] < 0]
+        if not expense_df.empty:
+            expense_summary = expense_df.groupby("Description")["Amount"].sum()
+            top_expense = expense_summary.idxmin()
+            top_expense_value = abs(expense_summary.min())
+
+            st.subheader("Top Expense Area")
+            st.write(f"Highest spending on **{top_expense}** (₹{top_expense_value:,.0f})")
+
+    # -------------------------
+    # ASK PAISAPAL TAB
+    # -------------------------
+    elif page == "Ask PaisaPal":
 
         st.subheader("Ask PaisaPal")
 
-        user_question = st.text_input("Ask about profit, runway, score, or trend")
+        question = st.text_input("Ask something about your business:")
 
-        if user_question:
+        if question:
+            question = question.lower()
 
-            question = user_question.lower()
-            response = ""
-
-            if "profit" in question or "cash" in question:
-                if net_cashflow >= 0:
-                    response = "Your business is currently operating with positive cash flow."
+            if "profit" in question or "loss" in question:
+                if net_cashflow > 0:
+                    response = "Your business is currently profitable."
                 else:
-                    response = "Spending is currently exceeding inflows."
+                    response = "Your business is currently running at a loss."
 
             elif "runway" in question:
+                total_days = (df["Date"].max() - df["Date"].min()).days + 1
+                avg_daily_cashflow = net_cashflow / total_days
+
                 if avg_daily_cashflow < 0:
-                    current_cash = df["Cash Balance"].iloc[-1]
+                    current_cash = df["Cumulative Cash"].iloc[-1]
                     runway_days = abs(current_cash / avg_daily_cashflow)
-                    response = f"Estimated runway is approximately {int(runway_days)} days."
+                    response = f"Estimated cash runway is approximately {int(runway_days)} days."
                 else:
-                    response = "Runway risk is currently low."
+                    response = "You are not burning cash daily."
 
             elif "score" in question:
                 response = f"Your Business Health Score is {score}/100."
 
             elif "trend" in question:
-                if df["Cash Balance"].iloc[-1] > df["Cash Balance"].iloc[0]:
+                if df["Cumulative Cash"].iloc[-1] > df["Cumulative Cash"].iloc[0]:
                     response = "Cash trend is improving over time."
                 else:
                     response = "Cash trend is gradually declining."
