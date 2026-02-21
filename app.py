@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 
 st.set_page_config(page_title="PaisaPal", layout="wide")
 
@@ -60,18 +59,21 @@ if uploaded_file:
 
     score = max(score, 0)
 
-    # KPI Overview
+    # -------------------------
+    # FINANCIAL OVERVIEW
+    # -------------------------
     st.markdown("## Financial Overview")
 
     col1, col2, col3 = st.columns(3)
-
     col1.metric("Total Inflow", f"₹{total_income:,.0f}")
     col2.metric("Total Outflow", f"₹{total_expense:,.0f}")
     col3.metric("Net Position", f"₹{net_cashflow:,.0f}")
 
     st.divider()
 
-    # BIG PREMIUM SCORE DISPLAY
+    # -------------------------
+    # BIG PREMIUM HEALTH SCORE
+    # -------------------------
     st.markdown("## Business Health Score")
 
     st.markdown(
@@ -92,13 +94,17 @@ if uploaded_file:
 
     st.divider()
 
-    # Cash Trend
+    # -------------------------
+    # CASH TREND
+    # -------------------------
     st.markdown("## Cash Trend")
     st.line_chart(df.set_index("Date")["Cash Balance"])
 
     st.divider()
 
-    # Risk Indicators
+    # -------------------------
+    # RISK INDICATORS
+    # -------------------------
     st.markdown("## Risk Indicators")
 
     col1, col2, col3 = st.columns(3)
@@ -124,7 +130,9 @@ if uploaded_file:
 
     st.divider()
 
-    # Cash Runway
+    # -------------------------
+    # CASH RUNWAY
+    # -------------------------
     st.markdown("## Cash Runway Estimate")
 
     total_days = (df["Date"].max() - df["Date"].min()).days + 1
@@ -143,13 +151,56 @@ if uploaded_file:
 
     st.divider()
 
-    # Ask PaisaPal
+    # -------------------------
+    # 🧠 EXECUTIVE FINANCIAL BRIEF
+    # -------------------------
+    st.markdown("## 🧠 Executive Financial Brief")
+
+    if net_cashflow > 0:
+        position_text = "Operations are generating positive cash flow."
+    else:
+        position_text = "Current spending is exceeding inflows."
+
+    if concentration_risk == "High":
+        risk_text = "High dependency on a single revenue source."
+    elif expense_ratio > 0.8:
+        risk_text = "Expense levels are significantly impacting margins."
+    elif df["Cash Balance"].iloc[-1] < df["Cash Balance"].iloc[0]:
+        risk_text = "Cash trend is declining over the period."
+    else:
+        risk_text = "No critical structural risk detected."
+
+    if score >= 80:
+        outlook_text = "Financial structure appears stable and resilient."
+    elif score >= 50:
+        outlook_text = "Business remains stable but requires monitoring."
+    else:
+        outlook_text = "Stability requires strategic improvement."
+
+    if concentration_risk == "High":
+        focus_text = "Diversifying revenue streams may improve long-term resilience."
+    elif expense_ratio > 0.8:
+        focus_text = "Reviewing high-impact expense categories may strengthen margins."
+    elif net_cashflow < 0:
+        focus_text = "Improving inflow consistency could enhance stability."
+    else:
+        focus_text = "Maintain discipline and continue monitoring performance trends."
+
+    st.write(f"**Current Position:** {position_text}")
+    st.write(f"**Primary Risk:** {risk_text}")
+    st.write(f"**Stability Outlook:** {outlook_text}")
+    st.write(f"**Suggested Focus:** {focus_text}")
+
+    st.divider()
+
+    # -------------------------
+    # ASK PAISAPAL
+    # -------------------------
     st.markdown("## Ask PaisaPal")
 
     question = st.text_input("Ask about your business performance")
 
     if question:
-
         q = question.lower()
 
         if "runway" in q:
