@@ -25,14 +25,13 @@ if uploaded_file:
 
     expense_ratio = total_expense / total_income if total_income != 0 else 0
 
-    # Revenue Concentration Analysis
+    # Revenue Concentration
     income_df = df[df["Amount"] > 0]
     concentration_risk = "Low"
     concentration_percent = 0
 
     if not income_df.empty:
         revenue_summary = income_df.groupby("Description")["Amount"].sum()
-        top_customer = revenue_summary.idxmax()
         top_customer_value = revenue_summary.max()
         concentration_percent = (top_customer_value / total_income) * 100
 
@@ -41,7 +40,7 @@ if uploaded_file:
         elif concentration_percent > 40:
             concentration_risk = "Moderate"
 
-    # Business Health Score Calculation
+    # Health Score
     score = 100
 
     if net_cashflow < 0:
@@ -59,11 +58,8 @@ if uploaded_file:
 
     score = max(score, 0)
 
-    # -------------------------
-    # FINANCIAL OVERVIEW
-    # -------------------------
+    # Financial Overview
     st.markdown("## Financial Overview")
-
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Inflow", f"₹{total_income:,.0f}")
     col2.metric("Total Outflow", f"₹{total_expense:,.0f}")
@@ -71,11 +67,8 @@ if uploaded_file:
 
     st.divider()
 
-    # -------------------------
-    # BUSINESS HEALTH SCORE
-    # -------------------------
+    # Big Health Score
     st.markdown("## Business Health Score")
-
     st.markdown(
         f"""
         <div style='text-align: center; padding: 40px 0;'>
@@ -94,19 +87,14 @@ if uploaded_file:
 
     st.divider()
 
-    # -------------------------
-    # CASH TREND
-    # -------------------------
+    # Cash Trend
     st.markdown("## Cash Trend")
     st.line_chart(df.set_index("Date")["Cash Balance"])
 
     st.divider()
 
-    # -------------------------
-    # RISK INDICATORS
-    # -------------------------
+    # Risk Indicators
     st.markdown("## Risk Indicators")
-
     col1, col2, col3 = st.columns(3)
 
     if expense_ratio > 0.8:
@@ -130,11 +118,8 @@ if uploaded_file:
 
     st.divider()
 
-    # -------------------------
-    # CASH RUNWAY
-    # -------------------------
+    # Cash Runway
     st.markdown("## Cash Runway Estimate")
-
     total_days = (df["Date"].max() - df["Date"].min()).days + 1
 
     if total_days > 0:
@@ -143,17 +128,13 @@ if uploaded_file:
         if avg_daily_cashflow < 0:
             current_cash = df["Cash Balance"].iloc[-1]
             runway_days = abs(current_cash / avg_daily_cashflow)
-            st.info(
-                f"At current performance levels, cash buffer may sustain approximately {int(runway_days)} days."
-            )
+            st.info(f"At current performance levels, cash buffer may sustain approximately {int(runway_days)} days.")
         else:
             st.success("Current operations are not consuming daily cash reserves.")
 
     st.divider()
 
-    # -------------------------
-    # EXECUTIVE FINANCIAL BRIEF
-    # -------------------------
+    # Executive Financial Brief
     st.markdown("## 🧠 Executive Financial Brief")
 
     if net_cashflow > 0:
@@ -177,52 +158,73 @@ if uploaded_file:
     else:
         outlook_text = "Focused improvements may enhance stability."
 
-    if concentration_risk == "High":
-        focus_text = "Consider diversifying revenue streams to reduce dependency risk."
-    elif expense_ratio > 0.8:
-        focus_text = "Reviewing high-impact expense areas may improve margins."
-    elif net_cashflow < 0:
-        focus_text = "Improving inflow consistency may strengthen cash stability."
-    else:
-        focus_text = "Maintain discipline and monitor performance trends."
-
     st.write(f"**Current Position:** {position_text}")
     st.write(f"**Primary Risk Area:** {risk_text}")
     st.write(f"**Stability Outlook:** {outlook_text}")
-    st.write(f"**Suggested Focus:** {focus_text}")
 
     st.divider()
 
-    # -------------------------
-    # ASK PAISAPAL
-    # -------------------------
+    # Ask PaisaPal - Structured Intent Engine
     st.markdown("## Ask PaisaPal")
-
     question = st.text_input("Ask about your business performance")
 
     if question:
         q = question.lower()
 
-        if "runway" in q:
+        runway_keywords = ["runway", "cash left", "how long", "survive", "sustain"]
+        health_keywords = ["health", "score", "status", "condition", "stable", "safe"]
+        risk_keywords = ["risk", "danger", "issue", "problem", "concern"]
+        revenue_keywords = ["revenue", "dependency", "customer", "concentration"]
+        expense_keywords = ["expense", "spending", "cost", "burn"]
+
+        response = ""
+
+        if any(word in q for word in runway_keywords):
             if avg_daily_cashflow < 0:
-                response = f"Estimated runway is approximately {int(runway_days)} days."
+                response = f"At current burn levels, your cash runway is approximately {int(runway_days)} days."
             else:
-                response = "Current operations are not burning cash daily."
+                response = "Your operations are not currently burning cash daily."
 
-        elif "risk" in q:
-            response = f"Primary risks include {concentration_risk} revenue concentration and expense ratio of {expense_ratio:.2f}."
-
-        elif "health" in q:
-            response = f"Your Business Health Score is {score}/100."
-
-        elif "trend" in q:
-            if df["Cash Balance"].iloc[-1] > df["Cash Balance"].iloc[0]:
-                response = "Cash balance trend is improving."
+        elif any(word in q for word in health_keywords):
+            if score >= 80:
+                response = "Your business is financially strong with stable structural indicators."
+            elif score >= 50:
+                response = "Your business is stable but requires monitoring."
             else:
-                response = "Cash balance trend shows mild pressure."
+                response = "There are structural pressures affecting financial stability."
+
+        elif any(word in q for word in risk_keywords):
+            risk_list = []
+            if concentration_risk == "High":
+                risk_list.append("high revenue concentration")
+            if expense_ratio > 0.8:
+                risk_list.append("elevated expense intensity")
+            if df["Cash Balance"].iloc[-1] < df["Cash Balance"].iloc[0]:
+                risk_list.append("declining cash trend")
+
+            if risk_list:
+                response = "Key structural risks include " + ", ".join(risk_list) + "."
+            else:
+                response = "No major structural risks are currently detected."
+
+        elif any(word in q for word in revenue_keywords):
+            if concentration_risk == "High":
+                response = f"Approximately {int(concentration_percent)}% of revenue comes from a single source."
+            elif concentration_risk == "Moderate":
+                response = f"Revenue concentration is moderate at {int(concentration_percent)}%."
+            else:
+                response = "Revenue streams appear diversified."
+
+        elif any(word in q for word in expense_keywords):
+            if expense_ratio > 0.8:
+                response = "Expenses are consuming a large portion of revenue."
+            elif expense_ratio > 0.6:
+                response = "Expenses are moderate and should be monitored."
+            else:
+                response = "Expense structure appears healthy."
 
         else:
-            response = "Try asking about runway, risk, health score, or trend."
+            response = "You can ask about runway, health score, risks, revenue dependency, or expenses."
 
         st.success(response)
 
