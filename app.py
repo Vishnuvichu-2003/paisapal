@@ -4,7 +4,7 @@ import pandas as pd
 st.set_page_config(page_title="PaisaPal", layout="wide")
 
 st.title("PaisaPal 💰")
-st.caption("Your AI Financial Co-Pilot for Growing Businesses")
+st.caption("Know Your Business Health in Seconds.")
 
 # Sidebar Upload
 st.sidebar.header("Upload Transaction CSV")
@@ -25,7 +25,7 @@ if uploaded_file:
 
     expense_ratio = total_expense / total_income if total_income != 0 else 0
 
-    # Revenue Concentration
+    # Revenue Concentration Analysis
     income_df = df[df["Amount"] > 0]
     concentration_risk = "Low"
     concentration_percent = 0
@@ -41,7 +41,7 @@ if uploaded_file:
         elif concentration_percent > 40:
             concentration_risk = "Moderate"
 
-    # Business Health Score
+    # Business Health Score Calculation
     score = 100
 
     if net_cashflow < 0:
@@ -72,7 +72,7 @@ if uploaded_file:
     st.divider()
 
     # -------------------------
-    # BIG PREMIUM HEALTH SCORE
+    # BUSINESS HEALTH SCORE
     # -------------------------
     st.markdown("## Business Health Score")
 
@@ -90,7 +90,7 @@ if uploaded_file:
     elif score >= 50:
         st.warning("Stable — Monitor Key Areas")
     else:
-        st.error("Attention Needed — Review Cash Structure")
+        st.warning("Opportunity to Improve Financial Structure")
 
     st.divider()
 
@@ -110,23 +110,23 @@ if uploaded_file:
     col1, col2, col3 = st.columns(3)
 
     if expense_ratio > 0.8:
-        col1.error("Expense Intensity: High")
+        col1.warning("Expense Intensity: High")
     elif expense_ratio > 0.6:
-        col1.warning("Expense Intensity: Moderate")
+        col1.info("Expense Intensity: Moderate")
     else:
         col1.success("Expense Intensity: Healthy")
 
     if concentration_risk == "High":
-        col2.error(f"Revenue Concentration: High ({concentration_percent:.0f}%)")
+        col2.warning(f"Revenue Concentration: High ({concentration_percent:.0f}%)")
     elif concentration_risk == "Moderate":
-        col2.warning(f"Revenue Concentration: Moderate ({concentration_percent:.0f}%)")
+        col2.info(f"Revenue Concentration: Moderate ({concentration_percent:.0f}%)")
     else:
         col2.success("Revenue Concentration: Diversified")
 
     if df["Cash Balance"].iloc[-1] > df["Cash Balance"].iloc[0]:
         col3.success("Cash Trend: Improving")
     else:
-        col3.warning("Cash Trend: Declining")
+        col3.info("Cash Trend: Slightly Declining")
 
     st.divider()
 
@@ -143,7 +143,7 @@ if uploaded_file:
         if avg_daily_cashflow < 0:
             current_cash = df["Cash Balance"].iloc[-1]
             runway_days = abs(current_cash / avg_daily_cashflow)
-            st.warning(
+            st.info(
                 f"At current performance levels, cash buffer may sustain approximately {int(runway_days)} days."
             )
         else:
@@ -152,42 +152,42 @@ if uploaded_file:
     st.divider()
 
     # -------------------------
-    # 🧠 EXECUTIVE FINANCIAL BRIEF
+    # EXECUTIVE FINANCIAL BRIEF
     # -------------------------
     st.markdown("## 🧠 Executive Financial Brief")
 
     if net_cashflow > 0:
         position_text = "Operations are generating positive cash flow."
     else:
-        position_text = "Current spending is exceeding inflows."
+        position_text = "Current spending is higher than inflows."
 
     if concentration_risk == "High":
-        risk_text = "High dependency on a single revenue source."
+        risk_text = "Revenue dependency on a single source is elevated."
     elif expense_ratio > 0.8:
-        risk_text = "Expense levels are significantly impacting margins."
+        risk_text = "Expense structure is putting pressure on margins."
     elif df["Cash Balance"].iloc[-1] < df["Cash Balance"].iloc[0]:
-        risk_text = "Cash trend is declining over the period."
+        risk_text = "Cash trend indicates slight downward movement."
     else:
-        risk_text = "No critical structural risk detected."
+        risk_text = "No major structural risk detected."
 
     if score >= 80:
         outlook_text = "Financial structure appears stable and resilient."
     elif score >= 50:
         outlook_text = "Business remains stable but requires monitoring."
     else:
-        outlook_text = "Stability requires strategic improvement."
+        outlook_text = "Focused improvements may enhance stability."
 
     if concentration_risk == "High":
-        focus_text = "Diversifying revenue streams may improve long-term resilience."
+        focus_text = "Consider diversifying revenue streams to reduce dependency risk."
     elif expense_ratio > 0.8:
-        focus_text = "Reviewing high-impact expense categories may strengthen margins."
+        focus_text = "Reviewing high-impact expense areas may improve margins."
     elif net_cashflow < 0:
-        focus_text = "Improving inflow consistency could enhance stability."
+        focus_text = "Improving inflow consistency may strengthen cash stability."
     else:
-        focus_text = "Maintain discipline and continue monitoring performance trends."
+        focus_text = "Maintain discipline and monitor performance trends."
 
     st.write(f"**Current Position:** {position_text}")
-    st.write(f"**Primary Risk:** {risk_text}")
+    st.write(f"**Primary Risk Area:** {risk_text}")
     st.write(f"**Stability Outlook:** {outlook_text}")
     st.write(f"**Suggested Focus:** {focus_text}")
 
@@ -219,7 +219,7 @@ if uploaded_file:
             if df["Cash Balance"].iloc[-1] > df["Cash Balance"].iloc[0]:
                 response = "Cash balance trend is improving."
             else:
-                response = "Cash balance trend is declining."
+                response = "Cash balance trend shows mild pressure."
 
         else:
             response = "Try asking about runway, risk, health score, or trend."
