@@ -1,23 +1,18 @@
-
 import streamlit as st
 import pandas as pd
 import google.generativeai as genai
 
 st.set_page_config(page_title="PaisaPal", layout="wide")
 
-# ── Gemini Setup ──────────────────────────────────────────────
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
-# ── Page Header ───────────────────────────────────────────────
 st.title("PaisaPal 💰")
 st.caption("Know Your Business Health in Seconds.")
 
-# ── Sidebar ───────────────────────────────────────────────────
 st.sidebar.header("Upload Transaction CSV")
 uploaded_file = st.sidebar.file_uploader("Upload CSV", type="csv")
 
-# Sample CSV download
 with open("transactions_sample.csv", "rb") as f:
     st.sidebar.download_button(
         label="📥 Download Sample CSV",
@@ -30,7 +25,6 @@ if uploaded_file:
 
     df = pd.read_csv(uploaded_file)
 
-    # ── Prepare Data ──────────────────────────────────────────
     df["Date"] = pd.to_datetime(df["Date"])
     df = df.sort_values("Date")
     df["Cash Balance"] = df["Amount"].cumsum()
@@ -40,7 +34,6 @@ if uploaded_file:
     net_cashflow   = total_income - total_expense
     expense_ratio  = total_expense / total_income if total_income != 0 else 0
 
-    # Revenue Concentration
     income_df = df[df["Amount"] > 0]
     concentration_risk    = "Low"
     concentration_percent = 0
@@ -54,7 +47,6 @@ if uploaded_file:
         elif concentration_percent > 40:
             concentration_risk = "Moderate"
 
-    # Cash Runway
     total_days = (df["Date"].max() - df["Date"].min()).days + 1
     avg_daily_cashflow = net_cashflow / total_days if total_days > 0 else 0
     runway_days = 0
@@ -62,16 +54,14 @@ if uploaded_file:
         current_cash = df["Cash Balance"].iloc[-1]
         runway_days  = abs(current_cash / avg_daily_cashflow)
 
-    # Health Score
     score = 100
-    if net_cashflow < 0:               score -= 30
-    if expense_ratio > 0.8:            score -= 25
-    elif expense_ratio > 0.6:          score -= 15
-    if concentration_risk == "High":   score -= 20
+    if net_cashflow < 0:                   score -= 30
+    if expense_ratio > 0.8:                score -= 25
+    elif expense_ratio > 0.6:              score -= 15
+    if concentration_risk == "High":       score -= 20
     elif concentration_risk == "Moderate": score -= 10
     score = max(score, 0)
 
-    # ── Financial Overview ────────────────────────────────────
     st.markdown("## Financial Overview")
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Inflow",  f"₹{total_income:,.0f}")
@@ -80,7 +70,6 @@ if uploaded_file:
 
     st.divider()
 
-    # ── Health Score ──────────────────────────────────────────
     st.markdown("## Business Health Score")
     st.markdown(
         f"""
@@ -100,13 +89,11 @@ if uploaded_file:
 
     st.divider()
 
-    # ── Cash Trend ────────────────────────────────────────────
     st.markdown("## Cash Trend")
     st.line_chart(df.set_index("Date")["Cash Balance"])
 
     st.divider()
 
-    # ── Risk Indicators ───────────────────────────────────────
     st.markdown("## Risk Indicators")
     col1, col2, col3 = st.columns(3)
 
@@ -131,7 +118,6 @@ if uploaded_file:
 
     st.divider()
 
-    # ── Cash Runway ───────────────────────────────────────────
     st.markdown("## Cash Runway Estimate")
     if avg_daily_cashflow < 0:
         st.info(f"At current performance levels, cash buffer may sustain approximately **{int(runway_days)} days**.")
@@ -140,13 +126,12 @@ if uploaded_file:
 
     st.divider()
 
-    # ── Executive Brief (AI-powered) ──────────────────────────
     st.markdown("## 🧠 Executive Financial Brief")
 
     business_context = f"""
     You are PaisaPal, a friendly AI financial copilot for Indian small businesses (MSMEs).
 
-    Here is the business's financial data:
+    Here is the business financial data:
     - Total Income: ₹{total_income:,.0f}
     - Total Expenses: ₹{total_expense:,.0f}
     - Net Cash Flow: ₹{net_cashflow:,.0f}
@@ -176,20 +161,16 @@ if uploaded_file:
 
     st.divider()
 
-    # ── Ask PaisaPal (Real AI) ────────────────────────────────
     st.markdown("## 💬 Ask PaisaPal")
     st.caption("Ask anything in English or Hindi about your business finances.")
 
-    # Chat history
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Display past messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    # User input
     user_question = st.chat_input("e.g. Mera paisa kahan ja raha hai? / What is my biggest risk?")
 
     if user_question:
