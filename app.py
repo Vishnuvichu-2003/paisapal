@@ -1,6 +1,4 @@
-Here's the new `app.py` code — select all and copy:
 
-```python
 import streamlit as st
 import pandas as pd
 import google.generativeai as genai
